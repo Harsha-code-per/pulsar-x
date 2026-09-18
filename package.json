@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:scientific": "tsc -p tsconfig.test.json && node --test .test-dist/tests/scientific/*.test.js",
+    "test": "npm run test:scientific"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
