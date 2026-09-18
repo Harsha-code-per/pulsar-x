@@ -12,7 +12,9 @@
   },
   "include": [
     "src/simulation/**/*.ts",
+    "src/workers/**/*.ts",
     "src/types/**/*.ts",
-    "tests/scientific/**/*.ts"
+    "tests/scientific/**/*.ts",
+    "tests/workers/**/*.ts"
   ]
 }

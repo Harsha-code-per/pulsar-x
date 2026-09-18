@@ -337,3 +337,21 @@ export function getScenarioH(): ScenarioDefinition {
     pulsars: INITIAL_PULSAR_CATALOG.slice(0, 4),
   };
 }
+
+/**
+ * Retrieves a scenario definition by string ID (e.g. "scenario-a", "SCENARIO_A").
+ */
+export function getScenarioById(id: string): ScenarioDefinition | undefined {
+  const normalized = id.toUpperCase().replace("-", "_");
+  switch (normalized) {
+    case "SCENARIO_A": return getScenarioA();
+    case "SCENARIO_B": return getScenarioB();
+    case "SCENARIO_C": return getScenarioC();
+    case "SCENARIO_D": return getScenarioD();
+    case "SCENARIO_E": return getScenarioE();
+    case "SCENARIO_F": return getScenarioF();
+    case "SCENARIO_G": return getScenarioG();
+    case "SCENARIO_H": return getScenarioH();
+    default: return undefined;
+  }
+}

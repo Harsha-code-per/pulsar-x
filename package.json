@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:scientific": "tsc -p tsconfig.test.json && node --test .test-dist/tests/scientific/*.test.js",
-    "test": "npm run test:scientific"
+    "test:workers": "tsc -p tsconfig.test.json && node --test .test-dist/tests/workers/*.test.js",
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/scientific/*.test.js .test-dist/tests/workers/*.test.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
