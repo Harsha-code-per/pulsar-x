@@ -9,6 +9,8 @@ import React, { useState } from "react";
 import { useCinematicStore } from "../../store/cinematic-store";
 import { defaultCinematicDirector } from "../../cinematic/director/CinematicDirector";
 import { CINEMATIC_SCENE_CATALOG } from "../../cinematic/scenes/catalog";
+import { useAudioStore } from "../../cinematic/audio/AudioState";
+import { defaultCinematicAudioEngine } from "../../cinematic/audio/CinematicAudioEngine";
 
 export function DirectorControls(): React.JSX.Element {
   const directorState = useCinematicStore((s) => s.directorState);
@@ -17,6 +19,10 @@ export function DirectorControls(): React.JSX.Element {
   const totalDuration_s = useCinematicStore((s) => s.totalDuration_s);
   const playbackSpeed = useCinematicStore((s) => s.playbackSpeed);
   const isDirectorActive = useCinematicStore((s) => s.isDirectorActive);
+
+  const isMuted = useAudioStore((s) => s.isMuted);
+  const masterVolume = useAudioStore((s) => s.masterVolume);
+  const isUnlocked = useAudioStore((s) => s.unlocked);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -148,6 +154,50 @@ export function DirectorControls(): React.JSX.Element {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Procedural Audio Controls */}
+          <div className="flex items-center justify-between border-t border-zinc-800/80 pt-2 text-[10px]">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => defaultCinematicAudioEngine.toggleMute()}
+                className={`rounded border px-2 py-0.5 font-bold transition-colors ${
+                  isMuted
+                    ? "border-amber-500/70 bg-amber-950/80 text-amber-300"
+                    : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                }`}
+              >
+                {isMuted ? "UNMUTE [M]" : "MUTE [M]"}
+              </button>
+              <span className="text-[9px] text-zinc-500">
+                STATUS:{" "}
+                <strong className={isMuted ? "text-amber-400" : isUnlocked ? "text-cyan-400" : "text-zinc-400"}>
+                  {isMuted ? "MUTED" : isUnlocked ? "ONLINE" : "STANDBY"}
+                </strong>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-zinc-500">VOL:</span>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={isMuted ? 0 : masterVolume}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (isMuted && val > 0) {
+                    defaultCinematicAudioEngine.setMute(false);
+                  }
+                  defaultCinematicAudioEngine.setVolume(val);
+                }}
+                className="h-1.5 w-20 cursor-pointer appearance-none rounded bg-zinc-800 accent-cyan-400"
+              />
+              <span className="w-7 text-right text-zinc-400">
+                {(masterVolume * 100).toFixed(0)}%
+              </span>
+            </div>
           </div>
         </div>
       )}

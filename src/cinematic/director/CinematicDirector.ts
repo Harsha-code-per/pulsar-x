@@ -15,6 +15,7 @@ import { useTelemetryStore } from "../../store/telemetry-store";
 import { useSimulationStore } from "../../store/simulation-store";
 import { useVisualStore } from "../../store/visual-store";
 import { evaluateTrigger, type CinematicTriggerContext } from "../triggers/types";
+import { defaultCinematicAudioEngine } from "../audio/CinematicAudioEngine";
 
 export class CinematicDirector {
   private stateMachine = new DirectorStateMachine("IDLE");
@@ -70,6 +71,7 @@ export class CinematicDirector {
     this.listenToWorkerEvents();
 
     this.clock.reset();
+    defaultCinematicAudioEngine.syncWithCinematicClock(this.clock);
     this.currentSceneIndex = 0;
     this.currentShotIndex = 0;
 
@@ -107,6 +109,7 @@ export class CinematicDirector {
 
     this.cameraController.setDirectorMode(true);
     this.clock.start();
+    defaultCinematicAudioEngine.start();
 
     useCinematicStore.getState().setDirectorActive(true);
     useCinematicStore.getState().setPresentationMode(true);
@@ -119,6 +122,7 @@ export class CinematicDirector {
     if (this.stateMachine.canTransitionTo("PAUSED")) {
       this.stateMachine.transitionTo("PAUSED");
       this.clock.pause();
+      defaultCinematicAudioEngine.pause();
     }
   }
 
@@ -126,6 +130,7 @@ export class CinematicDirector {
     if (this.stateMachine.canTransitionTo("PLAYING")) {
       this.stateMachine.transitionTo("PLAYING");
       this.clock.resume();
+      defaultCinematicAudioEngine.resume();
       this.cameraController.setDirectorMode(true);
       useCinematicStore.getState().setDirectorActive(true);
     }
@@ -133,6 +138,7 @@ export class CinematicDirector {
 
   public restart(): void {
     this.clock.reset();
+    defaultCinematicAudioEngine.restart();
     this.currentSceneIndex = -1;
     this.currentShotIndex = -1;
     this.recentWorkerEvents = [];
@@ -151,6 +157,7 @@ export class CinematicDirector {
     }
 
     this.clock.seek(targetTime_s);
+    defaultCinematicAudioEngine.onSeek(targetTime_s);
     this.cameraController.cancelTransition();
 
     const pos = this.timeline.resolvePosition(targetTime_s);
@@ -191,6 +198,7 @@ export class CinematicDirector {
 
   public exit(): void {
     this.clock.pause();
+    defaultCinematicAudioEngine.stop();
     this.cameraController.setDirectorMode(false);
     useCinematicStore.getState().setDirectorActive(false);
     useCinematicStore.getState().setPresentationMode(false);
@@ -204,6 +212,7 @@ export class CinematicDirector {
     if (this.stateMachine.canTransitionTo("COMPLETED")) {
       this.stateMachine.transitionTo("COMPLETED");
       this.clock.pause();
+      defaultCinematicAudioEngine.stop();
       this.eventBus.emit("CINEMATIC_COMPLETE");
     }
   }
@@ -225,6 +234,7 @@ export class CinematicDirector {
 
     this.currentSceneIndex = sceneIndex;
     const scene = scenes[sceneIndex];
+    defaultCinematicAudioEngine.setScene(scene.id);
 
     // Update visual theme in visual store
     useVisualStore.getState().setVisualThemeMode(scene.visualTheme);
@@ -291,6 +301,7 @@ export class CinematicDirector {
     this.clock.tick(delta_s);
     const playhead_s = this.clock.getPlayhead();
     const totalDuration_s = this.timeline.getTotalDuration();
+    defaultCinematicAudioEngine.update(delta_s, playhead_s);
 
     // Check completion
     if (playhead_s >= totalDuration_s) {

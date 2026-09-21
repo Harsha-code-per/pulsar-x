@@ -11,6 +11,8 @@ import { useCinematicStore } from "../../store/cinematic-store";
 import { useTelemetryStore } from "../../store/telemetry-store";
 import { defaultCinematicDirector } from "../../cinematic/director/CinematicDirector";
 import { CINEMATIC_SCENE_CATALOG } from "../../cinematic/scenes/catalog";
+import { useAudioStore } from "../../cinematic/audio/AudioState";
+import { defaultCinematicAudioEngine } from "../../cinematic/audio/CinematicAudioEngine";
 
 export function CinematicHUD(): React.JSX.Element {
   const isDirectorActive = useCinematicStore((s) => s.isDirectorActive);
@@ -20,6 +22,9 @@ export function CinematicHUD(): React.JSX.Element {
   const activeAlert = useCinematicStore((s) => s.activeAlert);
   const timelineProgress = useCinematicStore((s) => s.timelineProgress);
   const playhead_s = useCinematicStore((s) => s.playhead_s);
+
+  const isAudioMuted = useAudioStore((s) => s.isMuted);
+  const isAudioUnlocked = useAudioStore((s) => s.unlocked);
 
   const latestFrame = useTelemetryStore((s) => s.latestFrame);
   const currentScene = CINEMATIC_SCENE_CATALOG[activeSceneIndex] ?? CINEMATIC_SCENE_CATALOG[0];
@@ -66,6 +71,19 @@ export function CinematicHUD(): React.JSX.Element {
 
         {/* Right: Operational Badges */}
         <div className="flex items-center gap-2 text-[10px]">
+          <button
+            onClick={() => defaultCinematicAudioEngine.toggleMute()}
+            className={`rounded border px-2 py-0.5 transition-colors ${
+              isAudioMuted
+                ? "border-amber-500/80 bg-amber-950/80 text-amber-300 font-bold"
+                : isAudioUnlocked
+                ? "border-cyan-500/50 bg-cyan-950/60 text-cyan-300"
+                : "border-zinc-800 bg-zinc-950/80 text-zinc-400"
+            }`}
+            title="Toggle Audio Mute [M]"
+          >
+            AUDIO: <strong>{isAudioMuted ? "MUTED [M]" : isAudioUnlocked ? "PROCEDURAL" : "STANDBY"}</strong>
+          </button>
           <span className="rounded border border-zinc-800 bg-zinc-950/80 px-2 py-0.5 text-zinc-300">
             SOLVER: <strong className="text-cyan-400 font-bold">BATCH WLS + RK4 DR</strong>
           </span>
