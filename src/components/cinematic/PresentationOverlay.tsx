@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import { defaultCinematicDirector } from "../../cinematic/director/CinematicDirector";
+import { defaultCinematicAudioEngine } from "../../cinematic/audio/CinematicAudioEngine";
 import { useCinematicStore } from "../../store/cinematic-store";
 
 export function PresentationOverlay(): React.JSX.Element {
@@ -56,7 +57,7 @@ export function PresentationOverlay(): React.JSX.Element {
 
         case "KeyM":
           e.preventDefault();
-          useCinematicStore.getState().toggleMute();
+          defaultCinematicAudioEngine.toggleMute();
           break;
       }
     };
@@ -69,8 +70,9 @@ export function PresentationOverlay(): React.JSX.Element {
     return <></>;
   }
 
-  const startMission = () => {
+  const startMission = async () => {
     setIsVisible(false);
+    await defaultCinematicAudioEngine.unlock();
     defaultCinematicDirector.start();
   };
 
