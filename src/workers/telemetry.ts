@@ -55,6 +55,8 @@ export interface WorkerTelemetryFrame {
   readonly uncertaintyAxes3Sigma_m: Vector3Like;
   /** Position covariance eigenvalues (lambda_1 >= lambda_2 >= lambda_3) in m^2 */
   readonly eigenvalues_m2: readonly [number, number, number];
+  /** Principal orthonormal eigenvectors corresponding to eigenvalues */
+  readonly eigenvectors?: readonly [Vector3Like, Vector3Like, Vector3Like];
   /** Status summary of the most recent batch or filter solver update */
   readonly solverStatus: {
     readonly converged: boolean;

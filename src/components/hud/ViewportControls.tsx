@@ -10,10 +10,19 @@ import { useVisualStore, CameraMode, UncertaintyMode, ErrorMagnification } from 
 import { useSimulationStore } from "../../store/simulation-store";
 import { useTelemetryStore } from "../../store/telemetry-store";
 import type { RenderQualityTier } from "../../rendering/config/quality";
+import type { VisualThemeMode, PostprocessingPreset } from "../../rendering/config/lookdev";
+import { defaultCameraController } from "../../rendering/cameras/CameraController";
+import type { CinematicPresetId } from "../../rendering/cameras/presets";
 
 export function ViewportControls(): React.JSX.Element {
   const cameraMode = useVisualStore((s) => s.cameraMode);
   const setCameraMode = useVisualStore((s) => s.setCameraMode);
+
+  const visualThemeMode = useVisualStore((s) => s.visualThemeMode);
+  const setVisualThemeMode = useVisualStore((s) => s.setVisualThemeMode);
+
+  const postprocessingPreset = useVisualStore((s) => s.postprocessingPreset);
+  const setPostprocessingPreset = useVisualStore((s) => s.setPostprocessingPreset);
 
   const qualityTier = useVisualStore((s) => s.qualityTier);
   const setQualityTier = useVisualStore((s) => s.setQualityTier);
@@ -41,11 +50,25 @@ export function ViewportControls(): React.JSX.Element {
   const injectFault = useSimulationStore((s) => s.injectFault);
 
   const latestFrame = useTelemetryStore((s) => s.latestFrame);
+  const adapter = useTelemetryStore((s) => s.adapter);
   const navStatus = latestFrame?.navigationStatus ?? "DISCONNECTED";
 
   const [showFaultsMenu, setShowFaultsMenu] = useState(false);
 
   const isRunning = lifecycleState === "RUNNING";
+
+  const triggerCameraPreset = (presetId: CinematicPresetId) => {
+    const visual = adapter.getVisualState();
+    const sc = visual?.truePositionRender ?? [100, 0, 0];
+    const est = visual?.estimatedPositionRender ?? [100, 0, 0];
+    defaultCameraController.applyPreset(presetId, {
+      spacecraftPosRender: sc,
+      estimatedPosRender: est,
+      velocityRender: [0, 0, 0],
+      earthPosRender: [92, 0, -18],
+      activePulsarId: null,
+    });
+  };
 
   return (
     <div className="pointer-events-none absolute inset-0 z-40 flex flex-col justify-between p-4 select-none">
@@ -85,12 +108,12 @@ export function ViewportControls(): React.JSX.Element {
         </div>
       </header>
 
-      {/* Right Controls Panel: Camera, Quality, Uncertainty, Scale */}
-      <aside className="pointer-events-auto absolute top-16 right-4 flex w-60 flex-col gap-3 font-mono text-xs">
-        {/* Camera Modes */}
-        <div className="rounded border border-zinc-800/80 bg-zinc-950/80 p-3 shadow-xl backdrop-blur-md">
+      {/* Right Controls Panel: Camera, Presets, LookDev, Uncertainty, Scale */}
+      <aside className="pointer-events-auto absolute top-16 right-4 flex w-64 max-h-[calc(100vh-140px)] overflow-y-auto flex-col gap-2.5 font-mono text-xs pr-1">
+        {/* Camera Modes & Presets */}
+        <div className="rounded border border-zinc-800/80 bg-zinc-950/80 p-2.5 shadow-xl backdrop-blur-md">
           <span className="text-[10px] font-bold tracking-wider text-zinc-400">CAMERA RIG</span>
-          <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px]">
+          <div className="mt-1.5 grid grid-cols-2 gap-1 text-[10px]">
             {(
               [
                 ["FREE", "FREE ORBIT"],
@@ -112,12 +135,78 @@ export function ViewportControls(): React.JSX.Element {
               </button>
             ))}
           </div>
+
+          <div className="mt-2 border-t border-zinc-800/60 pt-1.5">
+            <span className="text-[9px] font-bold tracking-wider text-zinc-500">CINEMATIC COMPOSITIONS</span>
+            <div className="mt-1 grid grid-cols-3 gap-1 text-[9px]">
+              {(
+                [
+                  ["SPACECRAFT_HERO", "HERO"],
+                  ["EARTH_ORBIT", "EARTH"],
+                  ["NETWORK_OVERVIEW", "NETWORK"],
+                  ["UNCERTAINTY_CLOSE", "ELLIPSE"],
+                  ["SOLAR_INTERFERENCE", "SOLAR"],
+                  ["DESTINATION_APPROACH", "ARRIVAL"],
+                ] as [CinematicPresetId, string][]
+              ).map(([pid, label]) => (
+                <button
+                  key={pid}
+                  onClick={() => triggerCameraPreset(pid)}
+                  className="rounded border border-zinc-800 bg-zinc-900/70 py-1 text-center text-zinc-300 hover:border-cyan-600/60 hover:text-cyan-200"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Visual Look-Development Theme */}
+        <div className="rounded border border-zinc-800/80 bg-zinc-950/80 p-2.5 shadow-xl backdrop-blur-md">
+          <div className="flex justify-between items-center text-[10px]">
+            <span className="font-bold tracking-wider text-zinc-400">LOOK-DEV THEME</span>
+            <span className="text-cyan-400 font-bold text-[9px]">{visualThemeMode}</span>
+          </div>
+          <div className="mt-1.5 grid grid-cols-3 gap-1 text-[9px]">
+            {(["NOMINAL", "LOCKED", "DEGRADED", "CRITICAL", "CINEMATIC"] as VisualThemeMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setVisualThemeMode(mode)}
+                className={`rounded border py-1 text-center transition-colors ${
+                  visualThemeMode === mode
+                    ? "border-cyan-500 bg-cyan-950/80 text-cyan-300 font-bold"
+                    : "border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:bg-zinc-800"
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-2 border-t border-zinc-800/60 pt-1.5">
+            <span className="text-[9px] font-bold tracking-wider text-zinc-500">POST-PROCESSING PRESET</span>
+            <div className="mt-1 grid grid-cols-3 gap-1 text-[9px]">
+              {(["SCIENTIFIC", "CINEMATIC", "MINIMAL"] as PostprocessingPreset[]).map((preset) => (
+                <button
+                  key={preset}
+                  onClick={() => setPostprocessingPreset(preset)}
+                  className={`rounded border py-1 text-center transition-colors ${
+                    postprocessingPreset === preset
+                      ? "border-cyan-500 bg-cyan-950/80 text-cyan-300 font-bold"
+                      : "border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:bg-zinc-800"
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Uncertainty Mode */}
-        <div className="rounded border border-zinc-800/80 bg-zinc-950/80 p-3 shadow-xl backdrop-blur-md">
+        <div className="rounded border border-zinc-800/80 bg-zinc-950/80 p-2.5 shadow-xl backdrop-blur-md">
           <span className="text-[10px] font-bold tracking-wider text-zinc-400">COVARIANCE ELLIPSOID</span>
-          <div className="mt-2 grid grid-cols-4 gap-1 text-[10px]">
+          <div className="mt-1.5 grid grid-cols-4 gap-1 text-[10px]">
             {(["NONE", "1SIGMA", "2SIGMA", "3SIGMA"] as UncertaintyMode[]).map((m) => (
               <button
                 key={m}
@@ -135,12 +224,12 @@ export function ViewportControls(): React.JSX.Element {
         </div>
 
         {/* Error Vector Magnification */}
-        <div className="rounded border border-zinc-800/80 bg-zinc-950/80 p-3 shadow-xl backdrop-blur-md">
+        <div className="rounded border border-zinc-800/80 bg-zinc-950/80 p-2.5 shadow-xl backdrop-blur-md">
           <div className="flex justify-between items-center text-[10px]">
-            <span className="font-bold tracking-wider text-zinc-400">ERROR MAGNIFIER</span>
+            <span className="font-bold tracking-wider text-zinc-400">ERROR VECTOR VISUAL SCALE</span>
             <span className="text-amber-400 font-bold">{errorMag}×</span>
           </div>
-          <div className="mt-2 grid grid-cols-4 gap-1 text-[10px]">
+          <div className="mt-1.5 grid grid-cols-4 gap-1 text-[10px]">
             {([1, 10, 100, 1000] as ErrorMagnification[]).map((mag) => (
               <button
                 key={mag}
@@ -158,9 +247,9 @@ export function ViewportControls(): React.JSX.Element {
         </div>
 
         {/* Quality Tier & Reference Grid */}
-        <div className="rounded border border-zinc-800/80 bg-zinc-950/80 p-3 shadow-xl backdrop-blur-md">
+        <div className="rounded border border-zinc-800/80 bg-zinc-950/80 p-2.5 shadow-xl backdrop-blur-md">
           <span className="text-[10px] font-bold tracking-wider text-zinc-400">RENDER QUALITY</span>
-          <div className="mt-2 grid grid-cols-4 gap-1 text-[10px]">
+          <div className="mt-1.5 grid grid-cols-4 gap-1 text-[10px]">
             {(["LOW", "MEDIUM", "HIGH", "CINEMATIC"] as RenderQualityTier[]).map((t) => (
               <button
                 key={t}
@@ -176,7 +265,7 @@ export function ViewportControls(): React.JSX.Element {
             ))}
           </div>
 
-          <div className="mt-2.5 border-t border-zinc-800/60 pt-2 flex items-center justify-between text-[10px]">
+          <div className="mt-2 border-t border-zinc-800/60 pt-1.5 flex items-center justify-between text-[10px]">
             <span className="text-zinc-400">REFERENCE GRID:</span>
             <button
               onClick={toggleGrid}

@@ -25,6 +25,8 @@ import { getQualitySettings } from "../../rendering/config/quality";
 
 export function DeveloperOverlay(): React.JSX.Element {
   const show = useVisualStore((s) => s.showDeveloperOverlay);
+  const visualThemeMode = useVisualStore((s) => s.visualThemeMode);
+  const postprocessingPreset = useVisualStore((s) => s.postprocessingPreset);
   const qualityTier = useVisualStore((s) => s.qualityTier);
   const errorMag = useVisualStore((s) => s.errorMagnification);
   const cameraMode = useVisualStore((s) => s.cameraMode);
@@ -42,6 +44,7 @@ export function DeveloperOverlay(): React.JSX.Element {
   const gdop = latestFrame ? (Number.isFinite(latestFrame.gdop) ? latestFrame.gdop.toFixed(2) : "SINGULAR") : "--";
   const pdop = latestFrame ? (Number.isFinite(latestFrame.pdop) ? latestFrame.pdop.toFixed(2) : "SINGULAR") : "--";
   const status = latestFrame ? latestFrame.navigationStatus : "DISCONNECTED";
+  const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2).toFixed(1) : "1.0";
 
   return (
     <div className="pointer-events-none absolute top-4 left-4 z-50 flex flex-col gap-2 font-mono text-[11px] text-zinc-300 select-none">
@@ -95,6 +98,20 @@ export function DeveloperOverlay(): React.JSX.Element {
           {/* 10. Navigation State */}
           <span className="text-zinc-500">NAV STATE:</span>
           <span className="text-right font-bold text-cyan-400">{status}</span>
+
+          {/* 11. Navigation Solver */}
+          <span className="text-zinc-500">NAV SOLVER:</span>
+          <span className="text-right text-zinc-300">BATCH WLS + RK4 DR</span>
+
+          {/* 12. Visual State & Postprocessing */}
+          <span className="text-zinc-500">VISUAL THEME:</span>
+          <span className="text-right text-cyan-300">{visualThemeMode}</span>
+
+          <span className="text-zinc-500">POSTPROCESSING:</span>
+          <span className="text-right text-zinc-300">{postprocessingPreset}</span>
+
+          <span className="text-zinc-500">SHADERS / DPR:</span>
+          <span className="text-right text-zinc-300">{settings.shaderComplexity} / {dpr}×</span>
 
           {/* Additional auxiliary operational metrics */}
           <span className="text-zinc-500">PHOTON COUNT:</span>

@@ -27,6 +27,12 @@ export interface RenderQualitySettings {
   readonly vignetteEnabled: boolean;
   /** Antialiasing enabled */
   readonly antialias: boolean;
+  /** Maximum number of history points preserved in the trajectory FIFO buffer */
+  readonly trajectoryHistoryLength: number;
+  /** Number of discrete photon pulses traversing each active sightline */
+  readonly signalParticlesPerBeam: number;
+  /** Shader procedural complexity profile */
+  readonly shaderComplexity: "LOW" | "BALANCED" | "FULL";
 }
 
 export const QUALITY_TIERS: Record<RenderQualityTier, RenderQualitySettings> = {
@@ -43,6 +49,9 @@ export const QUALITY_TIERS: Record<RenderQualityTier, RenderQualitySettings> = {
     filmGrainIntensity: 0.0,
     vignetteEnabled: true,
     antialias: false,
+    trajectoryHistoryLength: 150,
+    signalParticlesPerBeam: 1,
+    shaderComplexity: "LOW",
   },
   MEDIUM: {
     tier: "MEDIUM",
@@ -57,6 +66,9 @@ export const QUALITY_TIERS: Record<RenderQualityTier, RenderQualitySettings> = {
     filmGrainIntensity: 0.0,
     vignetteEnabled: true,
     antialias: true,
+    trajectoryHistoryLength: 300,
+    signalParticlesPerBeam: 2,
+    shaderComplexity: "BALANCED",
   },
   HIGH: {
     tier: "HIGH",
@@ -68,23 +80,29 @@ export const QUALITY_TIERS: Record<RenderQualityTier, RenderQualitySettings> = {
     pulsarBeamsEnabled: true,
     pulsarBeamSegments: 16,
     filmGrainEnabled: true,
-    filmGrainIntensity: 0.03,
+    filmGrainIntensity: 0.02,
     vignetteEnabled: true,
     antialias: true,
+    trajectoryHistoryLength: 600,
+    signalParticlesPerBeam: 3,
+    shaderComplexity: "FULL",
   },
   CINEMATIC: {
     tier: "CINEMATIC",
     starCount: 35000,
     maxDpr: 2.0,
     bloomEnabled: true,
-    bloomIntensity: 1.1,
+    bloomIntensity: 1.0,
     sphereSegments: 96,
     pulsarBeamsEnabled: true,
     pulsarBeamSegments: 24,
     filmGrainEnabled: true,
-    filmGrainIntensity: 0.05,
+    filmGrainIntensity: 0.03,
     vignetteEnabled: true,
     antialias: true,
+    trajectoryHistoryLength: 1000,
+    signalParticlesPerBeam: 4,
+    shaderComplexity: "FULL",
   },
 };
 

@@ -5,6 +5,7 @@
 
 import { create } from "zustand";
 import type { RenderQualityTier } from "../rendering/config/quality";
+import type { VisualThemeMode, PostprocessingPreset } from "../rendering/config/lookdev";
 
 export type CameraMode =
   | "FREE"
@@ -25,6 +26,8 @@ export interface RenderStats {
 
 interface VisualStoreState {
   qualityTier: RenderQualityTier;
+  visualThemeMode: VisualThemeMode;
+  postprocessingPreset: PostprocessingPreset;
   cameraMode: CameraMode;
   activeFocusPulsarId: string | null;
   uncertaintyMode: UncertaintyMode;
@@ -38,6 +41,8 @@ interface VisualStoreState {
 
   // Actions
   setQualityTier: (tier: RenderQualityTier) => void;
+  setVisualThemeMode: (mode: VisualThemeMode) => void;
+  setPostprocessingPreset: (preset: PostprocessingPreset) => void;
   setCameraMode: (mode: CameraMode) => void;
   setActiveFocusPulsarId: (id: string | null) => void;
   setUncertaintyMode: (mode: UncertaintyMode) => void;
@@ -52,6 +57,8 @@ interface VisualStoreState {
 
 export const useVisualStore = create<VisualStoreState>((set) => ({
   qualityTier: "HIGH",
+  visualThemeMode: "NOMINAL",
+  postprocessingPreset: "CINEMATIC",
   cameraMode: "FREE",
   activeFocusPulsarId: null,
   uncertaintyMode: "3SIGMA",
@@ -64,6 +71,8 @@ export const useVisualStore = create<VisualStoreState>((set) => ({
   renderStats: { fps: 60, drawCalls: 0, triangles: 0 },
 
   setQualityTier: (tier) => set({ qualityTier: tier }),
+  setVisualThemeMode: (mode) => set({ visualThemeMode: mode }),
+  setPostprocessingPreset: (preset) => set({ postprocessingPreset: preset }),
   setCameraMode: (mode) => set({ cameraMode: mode }),
   setActiveFocusPulsarId: (id) => set({ activeFocusPulsarId: id }),
   setUncertaintyMode: (mode) => set({ uncertaintyMode: mode }),

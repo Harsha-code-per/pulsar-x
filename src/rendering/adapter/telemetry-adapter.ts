@@ -43,6 +43,8 @@ export interface RenderVisualState {
   readonly sigma3_m: Vector3Like;
   /** Covariance eigenvalues in m^2 */
   readonly eigenvalues_m2: readonly [number, number, number];
+  /** Principal orthonormal eigenvectors */
+  readonly eigenvectors?: readonly [Vector3Like, Vector3Like, Vector3Like];
   /** Post-fit residual RMS in meters */
   readonly rmsResidual_m: number;
 }
@@ -122,6 +124,7 @@ export class TelemetryAdapter {
       sigma2_m: curr.uncertaintyAxes2Sigma_m,
       sigma3_m: curr.uncertaintyAxes3Sigma_m,
       eigenvalues_m2: curr.eigenvalues_m2,
+      eigenvectors: curr.eigenvectors,
       rmsResidual_m: curr.solverStatus.rmsResidual_m,
     };
   }

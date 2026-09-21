@@ -6,6 +6,7 @@
 
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { CINEMATIC_CAMERA_PRESETS, type CinematicPresetId, type CameraContext } from "./presets";
 
 export interface CameraTargetConfig {
   readonly position: [number, number, number];
@@ -115,6 +116,25 @@ export class CameraController {
       elapsed_s: 0,
       onComplete: config.onComplete,
     };
+  }
+
+  /**
+   * Applies a predefined cinematic camera composition.
+   */
+  public applyPreset(
+    presetId: CinematicPresetId,
+    context: CameraContext,
+    durationOverride_s?: number
+  ): void {
+    const preset = CINEMATIC_CAMERA_PRESETS[presetId];
+    if (!preset) return;
+    const { position, target } = preset.resolve(context);
+    this.transitionTo({
+      position,
+      target,
+      fov: preset.fov,
+      duration_s: durationOverride_s ?? preset.transitionDuration_s,
+    });
   }
 
   /**

@@ -28,6 +28,7 @@ import { SpacecraftNode } from "../spacecraft/SpacecraftNode";
 import { UncertaintyEllipsoid } from "../uncertainty/UncertaintyEllipsoid";
 import { TrajectorySystem } from "../trajectories/TrajectorySystem";
 import { PulsarSightlines } from "../signals/PulsarSightlines";
+import { DetectorFeedback } from "../signals/DetectorFeedback";
 import { ReferenceSystem } from "./ReferenceSystem";
 import { CameraRig } from "../cameras/CameraRig";
 import { EffectsSystem } from "../postprocessing/EffectsSystem";
@@ -85,6 +86,7 @@ export function SceneRoot(): React.JSX.Element {
 
       {/* 4. Active Sightlines and Photon Packets */}
       <PulsarSightlines />
+      <DetectorFeedback />
 
       {/* 5. Trajectory Paths */}
       <TrajectorySystem />

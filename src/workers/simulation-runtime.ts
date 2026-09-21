@@ -814,6 +814,7 @@ export class SimulationRuntime {
       uncertaintyAxes2Sigma_m: this.uncertaintyAxes.sigma2_m,
       uncertaintyAxes3Sigma_m: this.uncertaintyAxes.sigma3_m,
       eigenvalues_m2: this.uncertaintyAxes.eigenvalues_m2,
+      eigenvectors: this.uncertaintyAxes.eigenvectors,
       solverStatus: {
         converged: this.lastSolverStatus.converged,
         iterations: this.lastSolverStatus.iterations,
