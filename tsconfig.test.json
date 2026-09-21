@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./.test-dist",
+    "rootDir": "./",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noEmit": false
+  },
+  "include": [
+    "src/simulation/**/*.ts",
+    "src/workers/**/*.ts",
+    "src/types/**/*.ts",
+    "src/rendering/coordinates/*.ts",
+    "src/rendering/adapter/*.ts",
+    "src/rendering/config/*.ts",
+    "src/rendering/cameras/*.ts",
+    "src/cinematic/**/*.ts",
+    "src/store/**/*.ts",
+    "tests/scientific/**/*.ts",
+    "tests/workers/**/*.ts",
+    "tests/rendering/**/*.ts",
+    "tests/cinematic/**/*.ts"
+  ]
+}
