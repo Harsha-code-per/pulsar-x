@@ -14,7 +14,11 @@
     "src/simulation/**/*.ts",
     "src/workers/**/*.ts",
     "src/types/**/*.ts",
+    "src/rendering/coordinates/*.ts",
+    "src/rendering/adapter/*.ts",
+    "src/rendering/config/*.ts",
     "tests/scientific/**/*.ts",
-    "tests/workers/**/*.ts"
+    "tests/workers/**/*.ts",
+    "tests/rendering/**/*.ts"
   ]
 }

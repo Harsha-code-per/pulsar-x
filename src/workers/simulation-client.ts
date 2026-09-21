@@ -4,6 +4,8 @@
  *
  * Provides a clean, typed API for Zustand stores and UI components to orchestrate
  * the headless simulation worker without embedding scientific logic on the main thread.
+ * Features an automated, resilient fallback to DirectWorker in environments where
+ * Web Worker module loading is constrained.
  */
 
 import type {
@@ -20,6 +22,7 @@ import type {
   WorkerEventMessage,
   WorkerErrorMessage,
 } from "./telemetry";
+import { SimulationRuntime } from "./simulation-runtime";
 
 export interface WorkerLike {
   postMessage(message: unknown): void;
@@ -34,11 +37,42 @@ export type EventListener = (event: WorkerEventMessage) => void;
 export type ErrorListener = (error: WorkerErrorMessage) => void;
 export type StateChangeListener = (state: WorkerLifecycleState, previousState: WorkerLifecycleState) => void;
 
+/**
+ * Direct synchronous/microtask Worker fallback that executes SimulationRuntime
+ * in headless mode adhering bit-for-bit to the worker protocol.
+ */
+export class DirectWorker implements WorkerLike {
+  public onmessage: ((event: MessageEvent<unknown>) => void) | null = null;
+  public onerror: ((event: ErrorEvent) => void) | null = null;
+  private runtime: SimulationRuntime;
+
+  constructor() {
+    this.runtime = new SimulationRuntime((msg: WorkerToMainMessage) => {
+      if (this.onmessage) {
+        this.onmessage(new MessageEvent("message", { data: msg }));
+      }
+    });
+  }
+
+  public postMessage(message: unknown): void {
+    setTimeout(() => {
+      this.runtime.handleCommand(message as WorkerCommand);
+    }, 0);
+  }
+
+  public terminate(): void {
+    this.onmessage = null;
+  }
+}
+
 export class SimulationClient {
   private worker: WorkerLike | null = null;
   private state: WorkerLifecycleState = "UNINITIALIZED";
   private lastTelemetry: WorkerTelemetryFrame | null = null;
   private commandCounter = 0;
+  private hasReceivedMessage = false;
+  private lastInitPayload: SimulationInitPayload | undefined = undefined;
+  private lastRequestedStart = false;
 
   // Pending command promises (commandId -> { resolve, reject })
   private pendingCommands: Map<string, { resolve: () => void; reject: (err: Error) => void }> = new Map();
@@ -58,17 +92,23 @@ export class SimulationClient {
 
   /**
    * Lazily binds or creates the underlying Web Worker.
+   * Employs DirectWorker failover if Web Worker fails to load.
    */
   public ensureWorker(): WorkerLike {
     if (!this.worker) {
       if (typeof window !== "undefined" && typeof Worker !== "undefined") {
-        const baseUrl = typeof location !== "undefined" ? location.href : "http://localhost";
-        const worker = new Worker(new URL("./simulation.worker.ts", baseUrl), {
-          type: "module",
-        });
-        this.bindWorker(worker);
+        try {
+          // Resolve relative module URL safely across bundlers
+          const workerUrl = new URL("./simulation.worker.ts", window.location.href);
+          const worker = new Worker(workerUrl, { type: "module" });
+          this.bindWorker(worker);
+        } catch {
+          const fallback = new DirectWorker();
+          this.bindWorker(fallback);
+        }
       } else {
-        throw new Error("Web Worker environment not available. Pass a custom WorkerLike instance.");
+        const fallback = new DirectWorker();
+        this.bindWorker(fallback);
       }
     }
     return this.worker!;
@@ -80,10 +120,27 @@ export class SimulationClient {
     }
     this.worker = worker;
     this.worker.onmessage = (event: MessageEvent<unknown>): void => {
+      this.hasReceivedMessage = true;
       this.handleWorkerMessage(event.data as WorkerToMainMessage);
     };
+
     if ("onerror" in worker) {
       worker.onerror = (event: ErrorEvent): void => {
+        // If the worker encounters an unrecoverable load error before emitting messages, failover to DirectWorker
+        if (!this.hasReceivedMessage) {
+          console.warn("Worker script unreachable, failing over to resilient DirectWorker:", event.message);
+          const fallback = new DirectWorker();
+          this.bindWorker(fallback);
+          if (this.lastInitPayload) {
+            this.init(this.lastInitPayload).then(() => {
+              if (this.lastRequestedStart) {
+                this.start();
+              }
+            });
+          }
+          return;
+        }
+
         const errPayload: WorkerErrorMessage = {
           type: "WORKER_ERROR",
           category: "WORKER_INTERNAL_ERROR",
@@ -108,19 +165,23 @@ export class SimulationClient {
   // ==========================================================================
 
   public async init(payload?: SimulationInitPayload): Promise<void> {
+    this.lastInitPayload = payload;
     this.ensureWorker();
     return this.dispatchCommand({ type: "SIM_INIT", payload });
   }
 
   public async start(): Promise<void> {
+    this.lastRequestedStart = true;
     return this.dispatchCommand({ type: "SIM_START" });
   }
 
   public async pause(): Promise<void> {
+    this.lastRequestedStart = false;
     return this.dispatchCommand({ type: "SIM_PAUSE" });
   }
 
   public async resume(): Promise<void> {
+    this.lastRequestedStart = true;
     return this.dispatchCommand({ type: "SIM_RESUME" });
   }
 
@@ -157,6 +218,7 @@ export class SimulationClient {
   }
 
   public async stop(): Promise<void> {
+    this.lastRequestedStart = false;
     return this.dispatchCommand({ type: "SIM_STOP" });
   }
 
