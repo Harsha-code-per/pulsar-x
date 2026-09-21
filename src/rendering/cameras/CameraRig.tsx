@@ -16,6 +16,7 @@ import { useTelemetryStore } from "../../store/telemetry-store";
 import { INITIAL_PULSAR_CATALOG } from "../../simulation/pulsars/catalog";
 import { pulsarDirectionToHorizonPosition } from "../coordinates/scaling";
 import { defaultCameraController } from "./CameraController";
+import { defaultCinematicDirector } from "../../cinematic/director/CinematicDirector";
 
 export function CameraRig(): React.JSX.Element {
   const cameraMode = useVisualStore((s) => s.cameraMode);
@@ -44,8 +45,11 @@ export function CameraRig(): React.JSX.Element {
   }, [cameraMode]);
 
   useFrame((_, delta) => {
-    // If an explicit scripted transition is in progress, delegate to controller
-    if (defaultCameraController.isTransitioning()) {
+    // Advance cinematic director if playing
+    defaultCinematicDirector.update(delta);
+
+    // If director is active or an explicit scripted transition is in progress, delegate to controller
+    if (defaultCameraController.isDirectorControlled() || defaultCameraController.isTransitioning()) {
       defaultCameraController.update(delta, camera, controlsRef.current);
       return;
     }

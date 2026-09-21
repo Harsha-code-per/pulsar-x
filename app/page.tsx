@@ -11,6 +11,10 @@ import { useSimulationStore } from "../src/store/simulation-store";
 import { useVisualStore } from "../src/store/visual-store";
 import { ViewportControls } from "../src/components/hud/ViewportControls";
 import { DeveloperOverlay } from "../src/components/hud/DeveloperOverlay";
+import { CinematicHUD } from "../src/components/cinematic/CinematicHUD";
+import { DirectorControls } from "../src/components/cinematic/DirectorControls";
+import { PresentationOverlay } from "../src/components/cinematic/PresentationOverlay";
+import { useCinematicStore } from "../src/store/cinematic-store";
 
 // Dynamically import Three.js Canvas to avoid any SSR canvas/context initialization issues
 const PulsarCanvas = dynamic(
@@ -33,6 +37,7 @@ export default function Home(): React.JSX.Element {
   const isInitialized = useSimulationStore((s) => s.isInitialized);
   const start = useSimulationStore((s) => s.start);
   const setPrefersReducedMotion = useVisualStore((s) => s.setPrefersReducedMotion);
+  const isDirectorActive = useCinematicStore((s) => s.isDirectorActive);
 
   useEffect(() => {
     // Accessibility: Detect prefers-reduced-motion media query
@@ -59,11 +64,20 @@ export default function Home(): React.JSX.Element {
       {/* Real-time 3D Viewport */}
       <PulsarCanvas />
 
-      {/* Interactive Controls & Navigation Status */}
-      <ViewportControls />
+      {/* Cinematic HUD Layer (when Director is active) */}
+      <CinematicHUD />
+
+      {/* Interactive Controls & Navigation Status (hidden during cinematic playback) */}
+      {!isDirectorActive && <ViewportControls />}
 
       {/* Developer Diagnostics Overlay */}
       <DeveloperOverlay />
+
+      {/* Developer Cinematic Director Console */}
+      <DirectorControls />
+
+      {/* Presentation Entry Splash & Guide */}
+      <PresentationOverlay />
     </main>
   );
 }

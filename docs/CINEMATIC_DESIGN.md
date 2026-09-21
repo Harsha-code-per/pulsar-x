@@ -393,3 +393,19 @@ export const CINEMATIC_TRIGGERS: CinematicTrigger[] = [
   }
 ];
 ```
+
+---
+
+## 4. Implementation Notes & Runtime Solver Clarification (Phase 6)
+
+### 4.1 Authoritative Solver Architecture
+In strict adherence to `docs/NAVIGATION_RUNTIME_AUDIT.md`, the live simulation runtime executes an **Iterative Batch Weighted Least Squares (WLS)** estimator with continuous **Runge-Kutta 4th Order (RK4) Dead Reckoning (`deadReckonStep`)** and orbital smoothing. Historical references in early design concepts to an "IEKF" or "Extended Kalman Filter" have been audited and updated across all Phase 6 cinematic captions, HUD badges, and telemetry strips to reflect `BATCH WLS + RK4 DR`.
+
+### 4.2 Modular Scene Architecture
+Rather than maintaining a monolithic script, Phase 6 implements the complete 18-scene sequence as modular, strongly-typed files in `src/cinematic/scenes/` (`scene01-earth.ts` through `scene18-final-reveal.ts`) aggregated in `catalog.ts`.
+
+### 4.3 Trigger Priority & Event Bus
+Triggers are evaluated with strict priority:
+$$\text{EVENT\_TRIGGER} (100) > \text{TELEMETRY\_TRIGGER} (50) > \text{PLAYHEAD\_TRIGGER} (10)$$
+ensuring genuine Worker physical state transitions drive narrative milestones.
+

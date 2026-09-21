@@ -8,6 +8,8 @@ import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { CINEMATIC_CAMERA_PRESETS, type CinematicPresetId, type CameraContext } from "./presets";
 
+import type { ShotDefinition } from "../../cinematic/shots/types";
+
 export interface CameraTargetConfig {
   readonly position: [number, number, number];
   readonly target: [number, number, number];
@@ -40,7 +42,25 @@ export class CameraController {
   private position = new THREE.Vector3(0, 50, 140);
   private fov = 45;
   private isUserControlEnabled = true;
+  private isDirectorActive = false;
   private activeTransition: ActiveTransition | null = null;
+
+  public setDirectorMode(active: boolean): void {
+    this.isDirectorActive = active;
+    if (active) {
+      this.disableUserControl();
+    } else {
+      this.enableUserControl();
+    }
+  }
+
+  public isDirectorControlled(): boolean {
+    return this.isDirectorActive;
+  }
+
+  public cancelTransition(): void {
+    this.activeTransition = null;
+  }
 
   public setTarget(x: number, y: number, z: number): void {
     this.target.set(x, y, z);
@@ -134,6 +154,39 @@ export class CameraController {
       target,
       fov: preset.fov,
       duration_s: durationOverride_s ?? preset.transitionDuration_s,
+    });
+  }
+
+  /**
+   * Applies a shot definition from the Cinematic Director.
+   */
+  public applyShot(shot: ShotDefinition, context: CameraContext): void {
+    const cam = shot.camera;
+    let pos: [number, number, number];
+    let tgt: [number, number, number];
+    let fov = cam.fovStart ?? this.fov;
+
+    if (cam.preset) {
+      const preset = CINEMATIC_CAMERA_PRESETS[cam.preset];
+      if (preset) {
+        const resolved = preset.resolve(context);
+        pos = resolved.position;
+        tgt = resolved.target;
+        fov = cam.fovStart ?? preset.fov;
+      } else {
+        pos = [this.position.x, this.position.y, this.position.z];
+        tgt = [this.target.x, this.target.y, this.target.z];
+      }
+    } else {
+      pos = typeof cam.position === "function" ? cam.position(context) : (cam.position ?? [this.position.x, this.position.y, this.position.z]);
+      tgt = typeof cam.target === "function" ? cam.target(context) : (cam.target ?? [this.target.x, this.target.y, this.target.z]);
+    }
+
+    this.transitionTo({
+      position: pos,
+      target: tgt,
+      fov,
+      duration_s: shot.duration_s,
     });
   }
 
